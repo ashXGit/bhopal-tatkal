@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { handle } from "@/lib/api";
-import { requireRole } from "@/lib/auth/current-user";
+import { getSession, requireRole } from "@/lib/auth/current-user";
 import { postMessage, submitExplanation, toggleUpvote, updateStatus } from "@/lib/services/actions";
 
 const STAFF = ["AUTHORITY", "ZONE_OFFICER", "ADMIN"] as const;
@@ -10,8 +10,9 @@ export const POST = handle(async (req: Request, { params }: { params: Promise<{ 
   const { ref, action } = await params;
   switch (action) {
     case "upvote": {
-      const s = await requireRole();
-      return NextResponse.json(await toggleUpvote(ref, s.userId));
+      const s = await getSession();
+      const userId = s?.userId ?? "demo-citizen";
+      return NextResponse.json(await toggleUpvote(ref, userId));
     }
     case "messages": {
       const s = await requireRole();

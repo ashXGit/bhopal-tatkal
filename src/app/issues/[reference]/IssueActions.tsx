@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJSON } from "@/lib/client";
+import { RedditUpvoteIcon, RedditDownvoteIcon } from "@/components/ui/RedditIcons";
 
 function useAction() {
   const router = useRouter();
@@ -30,41 +31,79 @@ export function UpvoteButton({ reference, upvotes }: { reference: string; upvote
   const { busy, error, run } = useAction();
   const [count, setCount] = useState(upvotes);
   const [voted, setVoted] = useState(false);
+
+  const handleUpvote = () => {
+    run(`/api/issues/${reference}/upvote`, {}, (r) => {
+      const next = r.upvotes as number;
+      setCount(next);
+      setVoted(next > count);
+    });
+  };
+
+  const handleDownvote = () => {
+    if (voted) {
+      handleUpvote();
+    }
+  };
+
   return (
-    <div>
-      <button
-        disabled={busy}
-        onClick={() => run(`/api/issues/${reference}/upvote`, {}, (r) => {
-          const next = r.upvotes as number;
-          setCount(next);
-          setVoted(next > count);
-        })}
-        aria-label={`Upvote, ${count} upvotes`}
-        aria-pressed={voted}
-        className={`group flex flex-col items-center rounded-lg border-2 px-4 py-2 font-bold transition-all select-none
-          ${
-            voted
-              ? "border-orange-500 bg-orange-50 text-orange-500"
-              : "border-line bg-surface text-muted hover:border-orange-400 hover:text-orange-400"
-          } disabled:opacity-50`}
+    <div className="inline-flex flex-col">
+      <div
+        className={`inline-flex items-center rounded-full border transition-all duration-200 select-none shadow-sm ${
+          voted
+            ? "bg-vote/10 border-vote/40 text-vote"
+            : "bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200/80 dark:hover:bg-neutral-700/80"
+        }`}
       >
-        {/* Reddit-style upvote arrow */}
-        <svg
-          viewBox="0 0 24 24"
-          width="22" height="22"
-          fill={voted ? "currentColor" : "none"}
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="transition-transform group-hover:scale-110 group-active:scale-95"
-          aria-hidden
+        {/* Reddit Upvote Arrow Button */}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={handleUpvote}
+          aria-label={`Upvote, ${count} upvotes`}
+          aria-pressed={voted}
+          title={voted ? "Remove upvote" : "Upvote"}
+          className={`group flex items-center justify-center p-2 rounded-full transition-all duration-150 active:scale-90 ${
+            voted
+              ? "text-vote hover:bg-vote/20"
+              : "text-neutral-500 dark:text-neutral-400 hover:text-vote hover:bg-black/5 dark:hover:bg-white/10"
+          }`}
         >
-          <path d="M12 4L3 13h5v7h8v-7h5L12 4z" />
-        </svg>
-        <span className="mt-0.5 text-sm font-bold tabular-nums">{count}</span>
-      </button>
-      {error && <p className="mt-1 text-sm text-urgency-critical">{error}</p>}
+          <RedditUpvoteIcon
+            filled={voted}
+            className="w-5 h-5 transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0"
+          />
+        </button>
+
+        {/* Upvote Count */}
+        <span
+          className={`px-1.5 text-sm font-bold tabular-nums min-w-[20px] text-center select-none transition-colors ${
+            voted ? "text-vote" : "text-neutral-800 dark:text-neutral-200"
+          }`}
+        >
+          {count}
+        </span>
+
+        {/* Reddit Downvote Arrow Button */}
+        <button
+          type="button"
+          disabled={busy || !voted}
+          onClick={handleDownvote}
+          aria-label="Downvote"
+          title={voted ? "Cancel upvote" : "Civic issues can only be upvoted"}
+          className={`group flex items-center justify-center p-2 rounded-full transition-all duration-150 ${
+            voted
+              ? "text-neutral-500 hover:text-civic-600 hover:bg-black/5 active:scale-90 cursor-pointer"
+              : "text-neutral-300 dark:text-neutral-600 cursor-not-allowed opacity-50"
+          }`}
+        >
+          <RedditDownvoteIcon
+            filled={false}
+            className="w-5 h-5 transition-transform group-hover:translate-y-0.5 group-active:translate-y-0"
+          />
+        </button>
+      </div>
+      {error && <p className="mt-1 text-xs text-urgency-critical">{error}</p>}
     </div>
   );
 }

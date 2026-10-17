@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { IssueCard } from "@/components/issue/IssueCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { RedditUpvoteIcon } from "@/components/ui/RedditIcons";
 import { listPublicIssues } from "@/lib/services/issues";
 
 export const dynamic = "force-dynamic";
 
 const SORTS = [
   { key: "priority", label: "⭐ High Priority" },
-  { key: "upvotes", label: "👍 Most Upvoted" },
+  { key: "upvotes", label: "Most Upvoted" },
   { key: "oldest", label: "⏳ Longest Unresolved" },
   { key: "urgency", label: "🔴 Most Urgent" },
   { key: "recent", label: "🆕 New" },
@@ -50,7 +51,14 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
         {SORTS.map((s) => (
           <Link key={s.key} href={hrefWith(sp, { sort: s.key })} aria-current={sort === s.key ? "page" : undefined}
             className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold ${sort === s.key ? "border-civic-600 bg-civic-600 text-white" : "border-line bg-white"}`}>
-            {s.label}
+            {s.key === "upvotes" ? (
+              <span className="inline-flex items-center gap-1.5">
+                <RedditUpvoteIcon filled className="w-4 h-4 text-vote" />
+                {s.label}
+              </span>
+            ) : (
+              s.label
+            )}
           </Link>
         ))}
       </nav>

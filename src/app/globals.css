@@ -1,36 +1,47 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
-/* Civic platform — warm cream palette inspired by TalentBridge reference */
+/* Bhopal Tatkal palette: warm cream base, deep teal-green brand, saffron accent.
+   Every colour shares the same warm undertone. Tailwind's default red/amber/orange/neutral/slate
+   scales are re-pointed here so all components stay in harmony. */
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Base */
+  /* Base: warm neutrals */
   --color-page: #f5f2ec;
   --color-surface: #ffffff;
-  --color-ink: #1a1a1a;
-  --color-muted: #6b7280;
-  --color-line: #e5e0d8;
+  --color-ink: #1c1b18;
+  --color-muted: #6b6459;
+  --color-line: #e6e0d5;
 
-  /* Civic brand — deep blue-green */
-  --color-civic-50:  #eef6f3;
-  --color-civic-100: #d4ece5;
+  /* Brand: deep teal-green */
+  --color-civic-50:  #eef5f1;
+  --color-civic-100: #d5e8df;
   --color-civic-600: #1a6b5a;
   --color-civic-700: #145247;
 
-  /* Accent — soft lavender blobs like reference */
-  --color-accent-blob: #ede9fe;
+  /* Success: same green family as the brand, slightly lighter */
+  --color-leaf-50:  #eff6f0;
+  --color-leaf-100: #d7eadb;
+  --color-leaf-600: #2b7a4b;
 
-  /* Leaf / success */
-  --color-leaf-50:  #ecfdf5;
-  --color-leaf-100: #d1fae5;
-  --color-leaf-600: #047857;
+  /* Accent: saffron (upvotes, highlights) + soft lavender blob from the reference design */
+  --color-vote: #d9731f;
+  --color-accent-blob: #ece7f4;
 
-  /* Urgency */
-  --color-urgency-low:      #475569;
-  --color-urgency-medium:   #b45309;
-  --color-urgency-high:     #c2410c;
-  --color-urgency-critical: #b91c1c;
+  /* Urgency: warm earth ramp, grey → ochre → burnt orange → brick */
+  --color-urgency-low:      #6b6459;
+  --color-urgency-medium:   #9a5d0c;
+  --color-urgency-high:     #bf4e17;
+  --color-urgency-critical: #b0281e;
+
+  /* Tailwind defaults re-tuned to the warm palette */
+  --color-red-50: #fbefeb;   --color-red-100: #f6dcd5;  --color-red-200: #efc9bf;  --color-red-300: #e4ac9f;
+  --color-amber-50: #fbf4e6; --color-amber-100: #f5e6c8; --color-amber-200: #ecd5a6; --color-amber-900: #6b4410;
+  --color-orange-50: #fcf1e7; --color-orange-100: #f8e2cf; --color-orange-500: #d9731f;
+  --color-slate-100: #efebe4;
+  --color-neutral-100: #f1ede6; --color-neutral-200: #e6e0d5; --color-neutral-300: #d3ccbf; --color-neutral-400: #a8a092;
+  --color-neutral-500: #7d7568; --color-neutral-600: #5f584d; --color-neutral-700: #463f36; --color-neutral-800: #2e2a24;
 }
 
 html {

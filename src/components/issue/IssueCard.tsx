@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { PublicIssue } from "@/lib/privacy/public-issue";
 import { StatusBadge, UrgencyBadge } from "./badges";
+import { CardUpvoteButton } from "./CardUpvoteButton";
 
 // Public issue card. Accepts only PublicIssue, which by construction carries no reporter identity.
 export function IssueCard({ issue }: { issue: PublicIssue }) {
@@ -24,11 +25,8 @@ export function IssueCard({ issue }: { issue: PublicIssue }) {
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <div className="flex gap-4 font-bold">
-          <span className="flex items-center gap-1">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" className="text-orange-500" aria-hidden><path d="M12 4L3 13h5v7h8v-7h5L12 4z"/></svg>
-            {issue.upvotes}
-          </span>
+        <div className="flex items-center gap-4 font-bold">
+          <CardUpvoteButton reference={issue.reference} initialUpvotes={issue.upvotes} />
           <span className={over30 ? "text-urgency-critical" : resolved ? "text-leaf-600" : ""}>
             ⏳ {issue.daysUnresolved}d {resolved ? "to resolve" : "unresolved"}
           </span>

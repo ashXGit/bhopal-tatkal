@@ -55,9 +55,12 @@ export default async function RootLayout({
             >
               <span
                 aria-hidden
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-civic-600 text-white text-sm font-black"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-civic-600 text-white"
               >
-                BT
+                {/* Arrow logo: complaint moving forward fast ("tatkal") */}
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                  <path d="M12 3 3 12.5h5.5V21h7v-8.5H21L12 3z" />
+                </svg>
               </span>
               Bhopal Tatkal
             </Link>

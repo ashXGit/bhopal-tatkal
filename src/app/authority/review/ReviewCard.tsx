@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJSON } from "@/lib/client";
 import type { ReviewItem } from "@/lib/services/queries";
+import { RedditUpvoteIcon } from "@/components/ui/RedditIcons";
 
 type Cat = { id: string; name: string; departmentId: string };
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -71,7 +72,14 @@ export function ReviewCard({ c, categories }: { c: ReviewItem; categories: Cat[]
             <div className="rounded-xl bg-white p-3 text-sm">
               <b>Existing live issue #{dup.issue.reference}</b>
               <p className="mt-1">{dup.issue.title}: {dup.issue.summary}</p>
-              <p className="mt-1 text-muted">👥 {dup.issue.reportCount} reports · 👍 {dup.issue.upvoteCount}</p>
+              <p className="mt-1 text-muted flex items-center gap-1.5">
+                <span>👥 {dup.issue.reportCount} reports</span>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1 text-vote font-semibold">
+                  <RedditUpvoteIcon filled className="w-3.5 h-3.5" />
+                  {dup.issue.upvoteCount} upvotes
+                </span>
+              </p>
             </div>
           </div>
           <ul className="mt-3 flex flex-wrap gap-2 text-sm">

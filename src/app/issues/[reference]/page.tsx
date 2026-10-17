@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth/current-user";
 import { getIssueDetail } from "@/lib/services/queries";
 import { LocationBadge, StatusBadge, UrgencyBadge } from "@/components/issue/badges";
 import { AuthorityPanel, MessageForm, UpvoteButton } from "./IssueActions";
+import { RedditUpvoteIcon } from "@/components/ui/RedditIcons";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +42,12 @@ export default async function IssuePage({ params }: { params: Promise<{ referenc
 
         {/* USP: the two core signals */}
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-leaf-100 bg-leaf-50 p-4">
-            <div className="flex items-center gap-2 text-3xl font-extrabold text-orange-500">
-              <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden><path d="M12 4L3 13h5v7h8v-7h5L12 4z"/></svg>
+          <div className="rounded-2xl border border-orange-100 bg-orange-50/50 p-4">
+            <div className="flex items-center gap-2 text-3xl font-extrabold text-vote">
+              <RedditUpvoteIcon filled className="w-8 h-8 shrink-0" />
               {i.upvotes}
             </div>
-            <div className="text-sm text-muted">Upvotes</div>
+            <div className="text-sm font-medium text-muted">Upvotes</div>
           </div>
           <div className={`rounded-2xl border p-4 ${i.daysUnresolved > 30 ? "border-red-200 bg-red-50" : "border-leaf-100 bg-leaf-50"}`}>
             <div className="text-3xl font-extrabold">⏳ {i.daysUnresolved}</div>
