@@ -1,44 +1,43 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
-/* Bhopal Tatkal palette: warm cream base, deep teal-green brand, saffron accent.
-   Every colour shares the same warm undertone. Tailwind's default red/amber/orange/neutral/slate
-   scales are re-pointed here so all components stay in harmony. */
+/* Bhopal Tatkal palette "Lake Bhopal": sand base, lake-teal brand, coral accent.
+   Tailwind's default red/amber/orange/neutral/slate scales are re-pointed here so all components stay in harmony. */
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Base: warm neutrals */
-  --color-page: #f5f2ec;
+  --color-page: #f4f1ea;
   --color-surface: #ffffff;
-  --color-ink: #1c1b18;
-  --color-muted: #6b6459;
-  --color-line: #e6e0d5;
+  --color-ink: #102a2e;
+  --color-muted: #566664;
+  --color-line: #e2ddd2;
 
-  /* Brand: deep teal-green */
-  --color-civic-50:  #eef5f1;
-  --color-civic-100: #d5e8df;
-  --color-civic-600: #1a6b5a;
-  --color-civic-700: #145247;
+  /* Brand: lake teal */
+  --color-civic-50:  #e7f3f1;
+  --color-civic-100: #c9e6e1;
+  --color-civic-600: #0f766e;
+  --color-civic-700: #0b5a54;
 
-  /* Success: same green family as the brand, slightly lighter */
-  --color-leaf-50:  #eff6f0;
-  --color-leaf-100: #d7eadb;
-  --color-leaf-600: #2b7a4b;
+  /* Success: green that sits next to the teal brand */
+  --color-leaf-50:  #ecf6ef;
+  --color-leaf-100: #d2eadb;
+  --color-leaf-600: #2f7a4a;
 
-  /* Accent: saffron (upvotes, highlights) + soft lavender blob from the reference design */
-  --color-vote: #d9731f;
-  --color-accent-blob: #ece7f4;
+  /* Accent: coral (upvotes, highlights) + soft lake-mist blob */
+  --color-vote: #c94a35;
+  --color-accent-blob: #dcefea;
 
   /* Urgency: warm earth ramp, grey → ochre → burnt orange → brick */
-  --color-urgency-low:      #6b6459;
+  --color-urgency-low:      #566664;
   --color-urgency-medium:   #9a5d0c;
-  --color-urgency-high:     #bf4e17;
-  --color-urgency-critical: #b0281e;
+  --color-urgency-high:     #c2482d;
+  --color-urgency-critical: #a8231c;
 
   /* Tailwind defaults re-tuned to the warm palette */
   --color-red-50: #fbefeb;   --color-red-100: #f6dcd5;  --color-red-200: #efc9bf;  --color-red-300: #e4ac9f;
   --color-amber-50: #fbf4e6; --color-amber-100: #f5e6c8; --color-amber-200: #ecd5a6; --color-amber-900: #6b4410;
-  --color-orange-50: #fcf1e7; --color-orange-100: #f8e2cf; --color-orange-500: #d9731f;
+  --color-orange-50: #fcf1e7; --color-orange-100: #f8e2cf; --color-orange-500: #c94a35;
   --color-slate-100: #efebe4;
   --color-neutral-100: #f1ede6; --color-neutral-200: #e6e0d5; --color-neutral-300: #d3ccbf; --color-neutral-400: #a8a092;
   --color-neutral-500: #7d7568; --color-neutral-600: #5f584d; --color-neutral-700: #463f36; --color-neutral-800: #2e2a24;
