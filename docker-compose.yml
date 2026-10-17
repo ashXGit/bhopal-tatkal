@@ -1,0 +1,14 @@
+# Local PostgreSQL for development: docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tatkal
+      POSTGRES_PASSWORD: tatkal
+      POSTGRES_DB: bhopal_tatkal
+    ports:
+      - "5432:5432"
+    volumes:
+      - tatkal-db:/var/lib/postgresql/data
+volumes:
+  tatkal-db:

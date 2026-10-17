@@ -1,0 +1,58 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+/* Civic platform — warm cream palette inspired by TalentBridge reference */
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Base */
+  --color-page: #f5f2ec;
+  --color-surface: #ffffff;
+  --color-ink: #1a1a1a;
+  --color-muted: #6b7280;
+  --color-line: #e5e0d8;
+
+  /* Civic brand — deep blue-green */
+  --color-civic-50:  #eef6f3;
+  --color-civic-100: #d4ece5;
+  --color-civic-600: #1a6b5a;
+  --color-civic-700: #145247;
+
+  /* Accent — soft lavender blobs like reference */
+  --color-accent-blob: #ede9fe;
+
+  /* Leaf / success */
+  --color-leaf-50:  #ecfdf5;
+  --color-leaf-100: #d1fae5;
+  --color-leaf-600: #047857;
+
+  /* Urgency */
+  --color-urgency-low:      #475569;
+  --color-urgency-medium:   #b45309;
+  --color-urgency-high:     #c2410c;
+  --color-urgency-critical: #b91c1c;
+}
+
+html {
+  background: var(--color-page);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-civic-600);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Smooth hover transitions for interactive elements */
+a, button {
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}

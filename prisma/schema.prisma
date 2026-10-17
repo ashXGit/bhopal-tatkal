@@ -1,0 +1,485 @@
+// Bhopal Tatkal — data model
+//
+// Core idea: many citizen COMPLAINTS  ->  one verified ISSUE (cluster)  ->  one TICKET  ->  one DEPARTMENT.
+// A Complaint is private (linked to a user). An Issue is the public, anonymised record.
+// Nothing becomes an Issue until an authority approves the complaint.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")          // pooled (Neon/Vercel)
+  directUrl = env("DATABASE_URL_UNPOOLED") // direct, used by migrations
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CITIZEN
+  AUTHORITY
+  ZONE_OFFICER
+  ADMIN
+}
+
+enum Language {
+  HINDI
+  ENGLISH
+  HINGLISH
+}
+
+enum InputMode {
+  TEXT
+  VOICE
+  IMAGE
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ComplaintStatus {
+  PENDING_REVIEW     // waiting for authority
+  DUPLICATE_REVIEW   // similarity >= 80% with a live issue; authority must decide
+  APPROVED           // became (or joined) a live issue
+  REJECTED           // rejected with a reason
+  MERGED_DUPLICATE   // authority said "Same Issue"; linked to existing issue
+}
+
+enum IssueStatus {
+  APPROVED
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum TicketStatus {
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum DuplicateDecision {
+  PENDING
+  SAME_ISSUE
+  DIFFERENT_ISSUE
+}
+
+enum MessageSender {
+  CITIZEN
+  AUTHORITY
+  SYSTEM
+}
+
+enum NotificationType {
+  ISSUE_SUBMITTED
+  ISSUE_APPROVED
+  ISSUE_REJECTED
+  DUPLICATE_DETECTED
+  ISSUE_ASSIGNED
+  STATUS_CHANGED
+  ISSUE_RESOLVED
+  NEW_MESSAGE
+  THIRTY_DAY_UPDATE
+  NEW_REVIEW
+  POSSIBLE_DUPLICATE
+  HIGH_URGENCY
+  APPROACHING_30_DAYS
+  EXPLANATION_REQUIRED
+}
+
+enum DatasetStatus {
+  VALIDATED
+  IMPORTED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// People (private — never exposed on public issue data)
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  role         Role     @default(CITIZEN)
+  displayName  String   // internal only; public UI always shows "Anonymous Citizen"
+  phone        String?  @unique
+  email        String?  @unique
+  departmentId String?  // set for AUTHORITY users
+  zoneWardIds  Int[]    // wards a ZONE_OFFICER oversees
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  complaints    Complaint[]
+  upvotes       Upvote[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+}
+
+// ---------------------------------------------------------------------------
+// Configurable reference data (departments, categories, wards, gazetteer)
+// ---------------------------------------------------------------------------
+
+model Department {
+  id          String   @id // slug, e.g. "roads"
+  name        String
+  nameHi      String
+  icon        String   // emoji shown with text label
+  // expected resolution target in hours (used for overdue + ticket ETA)
+  slaHours    Int      @default(72)
+  active      Boolean  @default(true)
+
+  categories Category[]
+  issues     Issue[]
+  tickets    Ticket[]
+  users      User[]
+  digests    WeeklyDigest[]
+}
+
+model Category {
+  id           String  @id // slug, e.g. "pothole"
+  departmentId String
+  name         String
+  nameHi       String
+  keywords     String[] // Hindi / Hinglish / English trigger terms for the classifier
+  safetyRisk   Int      @default(0) // 0-40, feeds urgency "public safety" factor
+  serviceRisk  Int      @default(0) // 0-30, feeds urgency "service outage" factor
+  active       Boolean  @default(true)
+
+  department Department  @relation(fields: [departmentId], references: [id])
+  complaints Complaint[]
+  issues     Issue[]
+
+  @@index([departmentId])
+}
+
+model Ward {
+  id     Int    @id // ward number
+  name   String
+  zone   String
+
+  localities Locality[]
+  complaints Complaint[]
+  issues     Issue[]
+}
+
+model Locality {
+  id        String  @id @default(cuid())
+  name      String  // official locality name
+  wardId    Int
+  latitude  Float?
+  longitude Float?
+
+  ward    Ward            @relation(fields: [wardId], references: [id])
+  aliases LocalityAlias[]
+
+  complaints Complaint[]
+  issues     Issue[]
+
+  @@index([wardId])
+}
+
+model LocalityAlias {
+  id         String  @id @default(cuid())
+  localityId String
+  alias      String  // colloquial name or landmark, stored lowercase
+  isLandmark Boolean @default(false)
+
+  locality Locality @relation(fields: [localityId], references: [id], onDelete: Cascade)
+
+  @@unique([localityId, alias])
+  @@index([alias])
+}
+
+// ---------------------------------------------------------------------------
+// Complaints (private intake) and Issues (public, approved clusters)
+// ---------------------------------------------------------------------------
+
+model Complaint {
+  id           String          @id @default(cuid())
+  reference    String          @unique // human-friendly, e.g. "C-2026-00042"
+  reporterId   String?
+  status       ComplaintStatus @default(PENDING_REVIEW)
+
+  // Raw citizen input
+  text         String
+  inputMode    InputMode       @default(TEXT)
+  imageUrl     String?
+  imageCaption String?
+  locationText String?
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime        @default(now())
+
+  // AI triage output (suggestions; authority can override)
+  language        Language?
+  aiDepartmentId  String?
+  categoryId      String?
+  urgency         Urgency?
+  urgencyScore    Int?
+  urgencyReasons  String[]
+  localityId      String?
+  wardId          Int?
+  keyTerms        String[]
+  aiConfidence    Float?    // 0..1
+  aiExplanation   Json?     // { department: string, urgency: string }
+  aiIsDemo        Boolean   @default(true)
+  embedding       Float[]   // normalised vector used for duplicate detection
+
+  // Review outcome
+  issueId         String?   // set when approved or merged as duplicate
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedById    String?
+
+  reporter   User?       @relation(fields: [reporterId], references: [id])
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  locality   Locality?   @relation(fields: [localityId], references: [id])
+  ward       Ward?       @relation(fields: [wardId], references: [id])
+  issue      Issue?      @relation(fields: [issueId], references: [id])
+  duplicates DuplicateMatch[]
+  messages   Message[]
+
+  @@index([status, createdAt])
+  @@index([reporterId])
+  @@index([issueId])
+  @@index([categoryId, wardId, createdAt])
+}
+
+model Issue {
+  id           String      @id @default(cuid())
+  reference    String      @unique // public ID, e.g. "TR-1024"
+  title        String
+  summary      String
+  departmentId String
+  categoryId   String
+  localityId   String?
+  wardId       Int?
+  urgency      Urgency
+  urgencyScore Int
+  status       IssueStatus @default(APPROVED)
+
+  // denormalised counters for fast ranking
+  reportCount  Int         @default(1)
+  upvoteCount  Int         @default(0)
+
+  firstReportedAt DateTime  // drives "days unresolved"
+  approvedAt      DateTime  @default(now())
+  resolvedAt      DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  department   Department  @relation(fields: [departmentId], references: [id])
+  category     Category    @relation(fields: [categoryId], references: [id])
+  locality     Locality?   @relation(fields: [localityId], references: [id])
+  ward         Ward?       @relation(fields: [wardId], references: [id])
+  complaints   Complaint[]
+  ticket       Ticket?
+  upvotes      Upvote[]
+  updates      IssueUpdate[]
+  explanations AuthorityExplanation[]
+  resolution   ResolutionRecord?
+  messages     Message[]
+  matchedBy    DuplicateMatch[]
+
+  @@index([status, firstReportedAt])
+  @@index([departmentId, status])
+  @@index([wardId, categoryId])
+  @@index([upvoteCount])
+}
+
+// One row per (new complaint, candidate live issue) comparison at/above threshold.
+model DuplicateMatch {
+  id          String            @id @default(cuid())
+  complaintId String
+  issueId     String
+  similarity  Float             // final combined score 0..1
+  textScore   Float
+  locationScore Float
+  categoryScore Float
+  timeScore   Float
+  decision    DuplicateDecision @default(PENDING)
+  decidedAt   DateTime?
+  createdAt   DateTime          @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  issue     Issue     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@unique([complaintId, issueId])
+  @@index([decision])
+}
+
+model Upvote {
+  issueId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Operations: tickets, updates, accountability, resolution
+// ---------------------------------------------------------------------------
+
+// Internal to this prototype only — never sent to any government system.
+model Ticket {
+  id                  String       @id @default(cuid())
+  reference           String       @unique // e.g. "TR-2026-10482"
+  issueId             String       @unique
+  departmentId        String
+  status              TicketStatus @default(ASSIGNED)
+  expectedResolution  DateTime
+  medianHoursAtCreate Float?       // department median snapshot when ticket was created
+  createdAt           DateTime     @default(now())
+
+  issue      Issue      @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@index([departmentId, status])
+}
+
+model IssueUpdate {
+  id        String      @id @default(cuid())
+  issueId   String
+  status    IssueStatus?
+  note      String
+  public    Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId, createdAt])
+}
+
+// Required when an issue stays unresolved > 30 days. Shown publicly (department only, no employee identity).
+model AuthorityExplanation {
+  id                 String   @id @default(cuid())
+  issueId            String
+  explanation        String
+  expectedResolution DateTime
+  actionNote         String?
+  createdAt          DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+}
+
+model ResolutionRecord {
+  id           String   @id @default(cuid())
+  issueId      String   @unique
+  note         String
+  resolvedAt   DateTime
+  evidenceUrl  String?
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+// Historical / imported records used for median resolution time. Read-only source data.
+model HistoricalRecord {
+  id           String    @id @default(cuid())
+  datasetId    String?
+  externalId   String?
+  departmentId String
+  categoryId   String?
+  wardId       Int?
+  reportedAt   DateTime
+  resolvedAt   DateTime?
+  status       String
+
+  dataset Dataset? @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([departmentId])
+  @@index([categoryId])
+  @@index([wardId])
+}
+
+// ---------------------------------------------------------------------------
+// Communication & notifications
+// ---------------------------------------------------------------------------
+
+// Thread is attached to an issue (public discussion) or to a complaint (private, e.g. before approval).
+model Message {
+  id          String        @id @default(cuid())
+  issueId     String?
+  complaintId String?
+  sender      MessageSender
+  body        String
+  createdAt   DateTime      @default(now())
+
+  issue     Issue?     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  complaint Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@index([issueId, createdAt])
+  @@index([complaintId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Reporting, datasets, audit
+// ---------------------------------------------------------------------------
+
+model WeeklyDigest {
+  id           String   @id @default(cuid())
+  departmentId String
+  weekStart    DateTime
+  weekEnd      DateTime
+  data         Json     // snapshot of computed digest metrics
+  createdAt    DateTime @default(now())
+
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([departmentId, weekStart])
+}
+
+model Dataset {
+  id           String        @id @default(cuid())
+  fileName     String
+  format       String        // "csv" | "json"
+  status       DatasetStatus
+  totalRecords Int
+  validRecords Int
+  invalidRecords Int
+  errors       Json          // [{ row, field, message }]
+  uploadedById String?
+  createdAt    DateTime      @default(now())
+
+  records HistoricalRecord[]
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String   // e.g. "complaint.approve", "issue.status", "duplicate.same"
+  entityType String
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
